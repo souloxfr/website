@@ -54,6 +54,7 @@ background-image:
 linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
 linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
 background-size:60px 60px;
+background-position: -1000px -1000px;
 z-index:-1;
 }
 
@@ -340,7 +341,7 @@ Join Discord
 <section id="mods">
 
 <div class="title">
-<h2>Featured Project</h2>
+<h2>Featured Hello Neighbor Mods</h2>
 <p>The latest release from souloxfr</p>
 </div>
 
@@ -414,7 +415,7 @@ around the projects since 2021.
 
 <div class="title">
 
-<h2>Projects</h2>
+<h2>Unity Projects</h2>
 
 </div>
 
@@ -438,9 +439,9 @@ Development updates and community projects.
 
 
 <div class="card">
-<h2>💬 Community</h2>
+<h2>🏃 Threshold</h2>
 <p>
-Join other creators and follow progress.
+Join to follow the creation of Threshold.
 </p>
 </div>
 
@@ -534,6 +535,34 @@ Thanks to HyperIsUnknown for the help!
 
 </footer>
 
+<script>
+(function () {
+  const grid = document.querySelector('.grid');
+  if (!grid) return;
+
+  const duration = 10000; // 10 seconds
+  const startX = -1000;
+  const startY = -1000;
+  const endX = 1000;
+  const endY = 1000;
+  let startTime = null;
+
+  function animate(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const elapsed = (timestamp - startTime) % duration;
+    const progress = elapsed / duration;
+
+    const x = startX + (endX - startX) * progress;
+    const y = startY + (endY - startY) * progress;
+
+    grid.style.backgroundPosition = x + 'px ' + y + 'px';
+
+    requestAnimationFrame(animate);
+  }
+
+  requestAnimationFrame(animate);
+})();
+</script>
 
 </body>
 </html>
