@@ -21,31 +21,81 @@ background:#0B132B;
 color:white;
 overflow-x:hidden;
 }
+/* Soft moving circles (25% opacity) that merge */
 body::before{
 content:"";
 position:fixed;
 inset:-50%;
 background:
-radial-gradient(circle at 25% 25%, rgba(58,80,107,0.45), transparent 28%),
-radial-gradient(circle at 75% 65%, rgba(28,37,65,0.55), transparent 32%),
-radial-gradient(circle at 50% 80%, rgba(58,80,107,0.35), transparent 25%),
-radial-gradient(circle at 80% 20%, rgba(11,19,43,0.6), transparent 30%),
+radial-gradient(circle at 15% 20%, rgba(58,80,107,0.25), transparent 22%),
+radial-gradient(circle at 85% 25%, rgba(28,37,65,0.25), transparent 25%),
+radial-gradient(circle at 25% 70%, rgba(58,80,107,0.25), transparent 24%),
+radial-gradient(circle at 75% 75%, rgba(28,37,65,0.25), transparent 23%),
+radial-gradient(circle at 50% 40%, rgba(58,80,107,0.22), transparent 28%),
+radial-gradient(circle at 40% 85%, rgba(28,37,65,0.22), transparent 20%),
 linear-gradient(130deg, #0B132B, #1C2541, #0B132B);
-background-size:200% 200%;
-animation:bgMove 14s ease-in-out infinite;
+background-size: 180% 180%;
+animation: circleMove 22s ease-in-out infinite;
 z-index:-2;
 }
-@keyframes bgMove{
-0%{transform:translate(-4%,-4%) scale(1)}
-50%{transform:translate(4%,4%) scale(1.05)}
-100%{transform:translate(-4%,-4%) scale(1)}
+@keyframes circleMove{
+0%{
+background-position:
+0% 0%,
+100% 0%,
+0% 100%,
+100% 100%,
+50% 50%,
+30% 80%,
+0% 0%;
+}
+25%{
+background-position:
+20% 30%,
+80% 20%,
+30% 70%,
+70% 80%,
+60% 40%,
+50% 60%,
+0% 0%;
+}
+50%{
+background-position:
+40% 10%,
+60% 40%,
+10% 60%,
+90% 50%,
+40% 70%,
+70% 30%,
+0% 0%;
+}
+75%{
+background-position:
+10% 40%,
+90% 10%,
+40% 90%,
+60% 30%,
+70% 50%,
+20% 70%,
+0% 0%;
+}
+100%{
+background-position:
+0% 0%,
+100% 0%,
+0% 100%,
+100% 100%,
+50% 50%,
+30% 80%,
+0% 0%;
+}
 }
 .grid{
 position:fixed;
 inset:0;
 background-image:
-linear-gradient(rgba(58,80,107,0.15) 1px,transparent 1px),
-linear-gradient(90deg,rgba(58,80,107,0.15) 1px,transparent 1px);
+linear-gradient(rgba(58,80,107,0.18) 1px,transparent 1px),
+linear-gradient(90deg,rgba(58,80,107,0.18) 1px,transparent 1px);
 background-size:60px 60px;
 background-position: -1000px -1000px;
 z-index:-1;
@@ -326,6 +376,9 @@ grid-template-columns:1fr;
     <img src="screenshot1.png" alt="Screenshot 1">
     <img src="screenshot2.png" alt="Screenshot 2">
     <img src="screenshot3.png" alt="Screenshot 3">
+    <img src="screenshot4.png" alt="Screenshot 4">
+    <img src="screenshot5.png" alt="Screenshot 5">
+    <img src="screenshot6.png" alt="Screenshot 6">
   </div>
 </section>
 
