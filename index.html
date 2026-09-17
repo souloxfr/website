@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -486,6 +486,7 @@
       height: 100%;
       line-height: 1.6;
       overflow: auto;
+      cursor: text;
     }
 
     .terminal-line {
@@ -589,6 +590,37 @@
       30% { transform: scale(1.15) translateY(-14px); }
       50% { transform: scale(1.1) translateY(-6px); }
       70% { transform: scale(1.05) translateY(-10px); }
+    }
+
+    /* Shutdown overlay */
+    #shutdown-overlay {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.2s ease;
+    }
+
+    #shutdown-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #shutdown-overlay img {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      opacity: 0;
+      transition: opacity 1.8s ease 0.6s;
+    }
+
+    #shutdown-overlay.active img {
+      opacity: 1;
     }
 
     @media (max-width: 700px) {
@@ -780,6 +812,11 @@
     </nav>
   </div>
 
+  <!-- Shutdown overlay (hidden by default) -->
+  <div id="shutdown-overlay">
+    <img src="https://kappa.lol/YpKeTD" alt="" />
+  </div>
+
   <template id="window-template">
     <div class="window" data-id="">
       <div class="titlebar">
@@ -800,6 +837,11 @@
       const template = document.getElementById('window-template');
       let zIndexCounter = 100;
       let openWindows = {};
+
+      // Terminal state
+      let terminalInputActive = false;
+      let currentCommand = '';
+      let terminalBodyEl = null;
 
       function updateClock() {
         const now = new Date();
@@ -944,8 +986,7 @@
                     <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
                   </svg>
                 </span>
-                <span>Discord (right click -> open link in new tab)</span>
-              </a>
+                <span>Discord</span>
               </a>
             </div>
           `
@@ -965,11 +1006,122 @@
               <div class="terminal-line output">Currently shipping fun. Building in public.</div>
               <div class="terminal-line"><span class="prompt">souloxfr@mac ~ %</span> <span class="cmd">echo "Thanks for stopping by"</span></div>
               <div class="terminal-line output">Thanks for stopping by</div>
-              <div class="terminal-line"><span class="prompt">souloxfr@mac ~ %</span> <span class="cursor-blink"></span></div>
+              <div class="terminal-line" id="active-line"><span class="prompt">souloxfr@mac ~ %</span> <span class="cmd" id="typed-cmd"></span><span class="cursor-blink"></span></div>
             </div>
           `
         }
       };
+
+      function triggerShutdown() {
+        const overlay = document.getElementById('shutdown-overlay');
+        if (!overlay) return;
+        overlay.classList.add('active');
+      }
+
+      function appendTerminalLine(html, isOutput = false) {
+        if (!terminalBodyEl) return;
+        const line = document.createElement('div');
+        line.className = 'terminal-line' + (isOutput ? ' output' : '');
+        line.innerHTML = html;
+        // Insert before the active line
+        const active = document.getElementById('active-line');
+        if (active) {
+          terminalBodyEl.insertBefore(line, active);
+        } else {
+          terminalBodyEl.appendChild(line);
+        }
+        terminalBodyEl.scrollTop = terminalBodyEl.scrollHeight;
+      }
+
+      function processCommand(cmd) {
+        const trimmed = cmd.trim().toLowerCase();
+        if (trimmed === 'penis') {
+          appendTerminalLine('<span class="prompt">souloxfr@mac ~ %</span> <span class="cmd">' + cmd + '</span>');
+          appendTerminalLine('Initiating shutdown sequence...', true);
+          setTimeout(triggerShutdown, 400);
+          return;
+        }
+        // Echo the command
+        appendTerminalLine('<span class="prompt">souloxfr@mac ~ %</span> <span class="cmd">' + (cmd || '') + '</span>');
+        if (trimmed === 'clear' || trimmed === 'cls') {
+          // Clear all but the active line
+          const lines = terminalBodyEl.querySelectorAll('.terminal-line:not(#active-line)');
+          lines.forEach(l => l.remove());
+        } else if (trimmed === 'whoami') {
+          appendTerminalLine('Velvetskye — Website Developer', true);
+        } else if (trimmed === 'help') {
+          appendTerminalLine('Available: whoami, clear, help, ls, echo ...', true);
+        } else if (trimmed.startsWith('echo ')) {
+          appendTerminalLine(cmd.slice(5), true);
+        } else if (trimmed === 'ls' || trimmed === 'ls projects/') {
+          appendTerminalLine('Minigame_Plaza/    The_Looting_Company/', true);
+        } else if (trimmed) {
+          appendTerminalLine('command not found: ' + cmd, true);
+        }
+        // Reset input
+        currentCommand = '';
+        const typed = document.getElementById('typed-cmd');
+        if (typed) typed.textContent = '';
+      }
+
+      function setupTerminalInput(win) {
+        const content = win.querySelector('.window-content');
+        terminalBodyEl = content.querySelector('#term-body') || content.querySelector('.terminal-body');
+        if (!terminalBodyEl) return;
+
+        // Click on terminal focuses it for typing
+        terminalBodyEl.addEventListener('click', () => {
+          terminalInputActive = true;
+          focusWindow(win);
+        });
+
+        // Also when window is focused
+        win.addEventListener('mousedown', () => {
+          if (win.dataset.id === 'terminal') {
+            terminalInputActive = true;
+          } else {
+            terminalInputActive = false;
+          }
+        });
+      }
+
+      // Global key handler for terminal
+      document.addEventListener('keydown', (e) => {
+        // Escape still closes focused window
+        if (e.key === 'Escape') {
+          const focused = document.querySelector('.window.focused:not(.minimized)');
+          if (focused) {
+            closeWindow(focused.dataset.id);
+            terminalInputActive = false;
+          }
+          return;
+        }
+
+        // Only handle typing when terminal is open and focused
+        const termWin = openWindows['terminal'];
+        if (!termWin || termWin.classList.contains('minimized') || !termWin.classList.contains('focused')) {
+          terminalInputActive = false;
+          return;
+        }
+        if (!terminalInputActive) return;
+
+        // Don't capture if typing in some other input (none exist, but safety)
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        e.preventDefault();
+
+        if (e.key === 'Enter') {
+          processCommand(currentCommand);
+        } else if (e.key === 'Backspace') {
+          currentCommand = currentCommand.slice(0, -1);
+          const typed = document.getElementById('typed-cmd');
+          if (typed) typed.textContent = currentCommand;
+        } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          currentCommand += e.key;
+          const typed = document.getElementById('typed-cmd');
+          if (typed) typed.textContent = currentCommand;
+        }
+      });
 
       function createWindow(id) {
         if (openWindows[id]) {
@@ -978,6 +1130,9 @@
             openWindows[id].classList.remove('minimized');
           }
           bounceDock(id);
+          if (id === 'terminal') {
+            terminalInputActive = true;
+          }
           return;
         }
 
@@ -1028,6 +1183,12 @@
         openWindows[id] = win;
         focusWindow(win);
         bounceDock(id);
+
+        if (id === 'terminal') {
+          setupTerminalInput(win);
+          terminalInputActive = true;
+          currentCommand = '';
+        }
       }
 
       function focusWindow(win) {
@@ -1035,6 +1196,11 @@
         win.style.zIndex = zIndexCounter;
         document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
         win.classList.add('focused');
+        if (win.dataset.id === 'terminal') {
+          terminalInputActive = true;
+        } else {
+          terminalInputActive = false;
+        }
       }
 
       function closeWindow(id) {
@@ -1046,6 +1212,11 @@
         setTimeout(() => {
           win.remove();
           delete openWindows[id];
+          if (id === 'terminal') {
+            terminalInputActive = false;
+            currentCommand = '';
+            terminalBodyEl = null;
+          }
         }, 180);
       }
 
@@ -1053,6 +1224,7 @@
         const win = openWindows[id];
         if (!win) return;
         win.classList.add('minimized');
+        if (id === 'terminal') terminalInputActive = false;
       }
 
       function toggleMaximize(id) {
@@ -1115,13 +1287,6 @@
       document.getElementById('finder')?.addEventListener('click', () => openWindow('about'));
 
       setTimeout(() => openWindow('about'), 400);
-
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          const focused = document.querySelector('.window.focused:not(.minimized)');
-          if (focused) closeWindow(focused.dataset.id);
-        }
-      });
     })();
   </script>
 </body>
